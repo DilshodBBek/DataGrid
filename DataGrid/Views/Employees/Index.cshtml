@@ -1,56 +1,131 @@
-﻿@model IEnumerable<DataGrid.Models.Employee>
-
+﻿@model DataGrid.Models.EmployeeViewModel;
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Employee";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Index</h1>
+<h1>Employee</h1>
+@{
+    if (Model.Method==MethodType.Uploaded)
+    {
+        if (Model.FailsCount>0)
+        {
+            if (Model.SuccessCount>0)
+            {
+                 <div class="alert alert-warning">
+                <strong>Warning!</strong> @Model.FailsCount element(s) could not uploaded.
+                <hr/>
+                    @Model.SuccessCount element(s) successful uploaded.
+            </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <strong>Danger!</strong> File upload failed!
+                </div>
+            }
 
-<p>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <strong>Success!</strong> File upload successful completed.All @Model.SuccessCount elements successful uploaded.
+            </div>
+        }
+    }
+    else if(Model.Method!=MethodType.None)
+    {
+        if (Model.IsSuccess)
+        {
+            <div class="alert alert-success">
+                <strong>Success!</strong> object successful @Model.Method.ToString()
+            </div> 
+        }else
+        {
+             <div class="alert alert-danger">
+                <strong>Danger!</strong> object  @Model.Method.ToString() failed
+                </div>
+        }
+    }
+}
+  
+    <form class="form-inline" asp-controller="Employees" asp-action="Index" method="post" enctype="multipart/form-data">
+        <input type="file"  required accept=".csv,.xls,.xlsx" class="input-group" name="file" />
+        <button class="btn btn-success" type="submit">Upload</button>
+        
+    </form>
+  
+    <hr />
+
+
+<form asp-action="Index" class="form-inline" method="get">
     <a asp-action="Create" class="btn btn-primary">Create New</a>
-    <a asp-action="Import" class="btn btn-success">Import Excel</a>
-    <a asp-action="Export" class="btn btn-success">Export Excel</a>
-</p>
+    <div class="form-actions no-color">
+        <p>
+            Search text: <input type="text" name="SearchString" value="@Model.CurrentFilter" />
+            <input type="submit" value="Search" class="btn btn-success" /> |
+            <a asp-action="Index" text-decoration-none>Back to Full List</a>
+        </p>
+    </div>
+</form>
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Forename)
+                @Html.DisplayNameFor(model => model.employee.PayrollNumber)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Surname)
+                <a asp-action="Index" class="text-decoration-none"
+                   asp-route-SortOrder="@Model.NameSortParm"
+                   asp-route-CurrentFilter="@Model.CurrentFilter">
+                    @Html.DisplayNameFor(model => model.employee.Forename)↑↓
+                </a>
+               
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.DateOfBirth)
+                <a asp-action="Index" class="text-decoration-none"
+                   asp-route-SortOrder="@Model.SurnameSortParm"
+                   asp-route-CurrentFilter="@Model.CurrentFilter">
+                    @Html.DisplayNameFor(model => model.employee.Surname)↑↓
+                </a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Phone)
+                <a asp-action="Index" class="text-decoration-none"
+                   asp-route-SortOrder="@Model.DateSortParm"
+                   asp-route-CurrentFilter="@Model.CurrentFilter">
+                    @Html.DisplayNameFor(model => model.employee.DateOfBirth)↑↓
+                </a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Mobile)
+                @Html.DisplayNameFor(model => model.employee.Phone)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Address)
+                @Html.DisplayNameFor(model => model.employee.Mobile)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Address2)
+                @Html.DisplayNameFor(model => model.employee.Address)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Postcode)
+                @Html.DisplayNameFor(model => model.employee.Address2)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.EmailHome)
+                @Html.DisplayNameFor(model => model.employee.Postcode)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.StartDate)
+                @Html.DisplayNameFor(model => model.employee.EmailHome)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.employee.StartDate)
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+@foreach (var item in Model._employees) {
         <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PayrollNumber)
+                </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Forename)
             </td>
@@ -82,11 +157,31 @@
                 @Html.DisplayFor(modelItem => item.StartDate)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.EmployeeId" class="btn btn-primary">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.EmployeeId" class="btn btn-success">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.EmployeeId" class="btn btn-danger">Delete</a>
+                <a asp-action="Edit" asp-controller="Employees" asp-route-id="@item.EmployeeId" class="btn btn-primary">Edit</a>
+                    <a asp-action="Details" asp-controller="Employees" asp-route-id="@item.EmployeeId" class="btn btn-success">Details</a>
+                    <a asp-action="Delete" asp-controller="Employees" asp-route-id="@item.EmployeeId" class="btn btn-danger">Delete</a>
             </td>
         </tr>
 }
     </tbody>
 </table>
+@{
+    var prevDisabled = !Model._employees.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model._employees.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="Index"
+   asp-route-sortOrder="@Model.CurrentSort" 
+   asp-route-pageNumber="@(Model._employees.PageIndex - 1)"
+   asp-route-currentFilter="@Model.CurrentFilter"
+   class="btn btn-default @prevDisabled">
+    Previous
+</a>
+<a asp-action="Index"
+   asp-route-sortOrder="@Model.CurrentSort"
+   asp-route-pageNumber="@(Model._employees.PageIndex + 1)"
+   asp-route-currentFilter="@Model.CurrentFilter"
+   class="btn btn-default @nextDisabled">Next
+</a>
+
+
